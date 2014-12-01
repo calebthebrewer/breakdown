@@ -1,0 +1,23 @@
+<div>
+	<h3>{{node.label}}: {{node.id}}</h3>
+	<input type="button" value="Remove" ng-click="remove()">
+	<h4>Properties</h4>
+	<ul ng-repeat="(key, value) in node.properties">
+		<li>{{key}}: {{value}}</li>
+	</ul>
+	<h4>Prototype</h4>
+	<ul>
+		<li ng-repeat="(key, value) in node.prototype" ng-click="removePrototype(key)">{{key}}: {{value}}</li>
+		<li>
+			<form ng-submit="addPrototype()">
+				<input type="text" placeholder="property" ng-model="property" size="8">:
+				<input type="text" placeholder="value" ng-model="value" size="8">
+				<input type="submit" style="display: none;">
+			</form>
+		</li>
+	</ul>
+	<input type="button" value="Add Child" ng-click="addChild()">
+</div>
+<div ng-if="node.children.length" class="container">
+	<ng-include src="'nodes.html'"></ng-include>
+</div>

@@ -1,0 +1,12 @@
+.container {
+	background-color: #eee;
+	display: flex;
+	flex-direction: row;
+}
+
+.child {
+	background-color: #ddd;
+	flex-grow: 1;
+	margin: 4px;
+	padding: 1px;
+}
