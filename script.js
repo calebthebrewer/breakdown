@@ -28,14 +28,25 @@ angular
 					//load children
 					loadChildren();
 
+					//save yourself
+					save();
+
 					$scope.$on('remove', function (event, childId) {
 						//if I triggered the remove, don't make me do it again
-						if (childId === $node.id) return;
+						if (childId === $node.id) {
+							return;
+						}
 
 						remove();
 					});
 
 					$scope.$on('remove-child', function (event, childId) {
+						//if I triggered the remove-child, I should ignore it
+						if (childId === $node.id) {
+							return;
+						}
+						//these events are targetted to a parent and should be captured
+						event.stopPropagation();
 						var childIndex = children.indexOf(childId);
 						if (childIndex > 0) {
 							children.splice(childIndex, 1);
@@ -88,7 +99,7 @@ angular
 					function addChild(child) {
 						if (typeof child !== 'object') {
 							child = Nodes.get(child);
-							if (child === null) {
+							if (!child) {
 								return false;
 							}
 							child.properties = $node.prototype;
@@ -157,7 +168,7 @@ angular
 
 			var node;
 			try {
-				node = Nodes.get('node.0');
+				node = Nodes.get('0');
 			} catch (e) {
 			}
 
