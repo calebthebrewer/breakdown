@@ -10,14 +10,18 @@ angular
 				templateUrl: 'node.html',
 				link: function ($scope) {
 
-					var parent,
-						$node = $scope.node,
+					var $node = $scope.node,
 						children = angular.copy($node.children) || [];
 
 					//properties are inherited from parents prototype
 					if (!$node.properties && $node.parent) {
-						parent = Nodes.get($node.parent);
-						$node.properties = parent.prototype;
+						Nodes
+							.get($node.parent)
+							.then(function(parent) {
+								$node.properties = parent.prototype;
+							}, function() {
+								$node.properties = {};
+							});
 					} else if (!$node.properties) {
 						$node.properties = {};
 					}
@@ -76,15 +80,15 @@ angular
 
 					$scope.addChild = function () {
 						var child = {
-							id: ($node.id || 0) + '.' + $node.children.length,
+							id: ($node.id || 0) + '-' + $node.children.length,
 							label: 'Child ' + $node.children.length,
 							properties: $node.prototype,
 							parent: $node.id
 						};
 
 						children.push(child.id);
+						$node.children.push(child);
 						save();
-						addChild(child);
 					};
 
 					$scope.remove = function () {
@@ -94,20 +98,6 @@ angular
 
 						remove();
 					};
-
-
-					function addChild(child) {
-						if (typeof child !== 'object') {
-							child = Nodes.get(child);
-							if (!child) {
-								return false;
-							}
-							child.properties = $node.prototype;
-						}
-
-						$node.children.push(child);
-						return true;
-					}
 
 					function save() {
 						Nodes.save($node.id, {
@@ -119,64 +109,108 @@ angular
 					}
 
 					function remove() {
-						if (Nodes.get($node.id)) {
-							Nodes.remove($node.id);
-						}
+						Nodes.remove($node.id);
 					}
 
 					function loadChildren() {
 						$scope.node.children = [];
 						for (var i = 0, l = children.length; i < l; i++) {
-							if (!addChild(children[i])) {
-								children.splice(i, 1);
-								save();
-							}
+							Nodes
+								.get(children[i])
+								.then(function(child) {
+									$node.children.push(child);
+								}, function() {
+									children.splice(i, 1);
+									save();
+								});
 						}
 					}
 				}
 			};
 		}])
-	.service('Nodes', function () {
-		var prefix = 'node.';
+	.factory('Nodes', [
+		'$q',
+		'$http',
+		function ($q, $http) {
+			var Nodes = {
+					save: save,
+					get: get,
+					remove: remove,
+					flush: flush
+				},
+				prefix = 'node.';
 
-		this.save = function (id, node) {
-			var string = JSON.stringify(node);
-			localStorage.setItem(prefix + id, string);
-		};
+			function save(id, node) {
+				var d = $q.defer();
 
-		this.get = function (id) {
-			var string = localStorage.getItem(prefix + id);
-			if (string) {
-				return JSON.parse(string);
-			} else {
-				return false;
+				$http
+					.post('/node/' + id, node)
+					.success(function() {
+						d.resolve();
+					}, function() {
+						d.reject();
+					});
+
+				return d.promise;
 			}
-		};
 
-		this.remove = function (id) {
-			localStorage.removeItem(prefix + id);
-		};
+			function get(id) {
+				var d = $q.defer();
 
-		this.flush = function () {
-			localStorage.clear();
-		};
-	})
+				$http
+					.get('/node/' + id)
+					.success(function(node) {
+						d.resolve(node);
+					})
+					.error(function() {
+						d.reject();
+					});
+
+				return d.promise;
+			}
+
+			function remove(id) {
+				var d = $q.defer();
+
+				$http
+					.delete('/node/' + id)
+					.success(function(node) {
+						d.resolve(node);
+					})
+					.error(function() {
+						d.reject();
+					});
+
+				return d.promise;
+			}
+
+			function flush() {
+				var d = $q.defer();
+
+				localStorage.clear();
+				d.resolve();
+
+				return d.promise;
+			}
+
+			return Nodes;
+		}])
 	.controller('home', [
 		'$scope',
 		'Nodes',
 		function ($scope, Nodes) {
 
-			var node;
-			try {
-				node = Nodes.get('0');
-			} catch (e) {
-			}
-
-			$scope.node = node || {
-				id: 0,
-				label: 'Bob',
-				children: []
-			};
+			Nodes
+				.get(0)
+				.then(function(node) {
+					$scope.node = node;
+				}, function(error) {
+					$scope.node = {
+						id: 0,
+						label: 'Bob',
+						children: []
+					};
+				});
 
 			$scope.flush = function () {
 				Nodes.flush();
