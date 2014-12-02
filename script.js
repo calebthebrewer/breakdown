@@ -64,6 +64,10 @@ angular
 						}
 					});
 
+					$scope.addPlugin = function() {
+						Nodes.plugin($node.id, $scope.plugin);
+					};
+
 					$scope.addPrototype = function () {
 						$node.prototype[$scope.property] = $scope.value;
 						$scope.property = '';
@@ -135,6 +139,7 @@ angular
 			var Nodes = {
 					save: save,
 					get: get,
+					plugin: plugin,
 					remove: remove,
 					flush: flush
 				},
@@ -159,6 +164,21 @@ angular
 
 				$http
 					.get('/node/' + id)
+					.success(function(node) {
+						d.resolve(node);
+					})
+					.error(function() {
+						d.reject();
+					});
+
+				return d.promise;
+			}
+
+			function plugin(id, library) {
+				var d = $q.defer();
+
+				$http
+					.put('/node/' + id + '/plugin/' + library)
 					.success(function(node) {
 						d.resolve(node);
 					})

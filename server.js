@@ -1,6 +1,9 @@
 var express = require('express'),
 	bodyParser = require('body-parser'),
-	storage = require('node-persist');
+	storage = require('node-persist'),
+	exec = require('child_process').exec,
+	fs = require('node-fs-extra'),
+	Nodes = require('./Nodes');
 
 var app = express();
 
@@ -20,25 +23,60 @@ app.get('/', function(req, res) {
 });
 
 app.get('/node/:id', function(req, res) {
-	var node = storage.getItem(req.params.id);
-
-	if (!node) {
-		res.status(404);
-	}
-
-	res.send(node);
+	Nodes
+		.read(req.params.id)
+		.then(function(node) {
+			res.send(node);
+		}, function () {
+			res.status(404).send();
+		});
 });
 
-app.post('/node/:id', function(req, res) {
-	storage.setItem(req.params.id, req.body);
-
-	res.send();
+app.post('/node', function(req, res) {
+	Nodes
+		.create(req.body)
+		.then(function(id) {
+			res.send(id);
+		}, function() {
+			res.status(500).send();
+		});
 });
 
 app.put('/node/:id', function(req, res) {
-	storage.setItem(req.params.id, req.body);
+	Nodes
+		.update(erq.params.id, req.body)
+		.then(function(node) {
+			res.send(node);
+		}, function() {
+			res.status(500).send();
+		});
+});
 
-	res.send();
+app.put('/node/:id/plugin/:library', function(req, res) {
+	var node = storage.getItem(req.params.id),
+		library = req.params.library;
+
+	if(node) {
+		if (!node.data) node.data = {plugins: {bower: []}};
+		if (!node.data.plugins) node.data.plugins = {bower: []};
+		if (!node.data.plugins.bower) node.data.plugins.bower = [];
+
+		node.data.plugins.bower.push(req.params.library);
+		exec('bower install ' + req.params.library, function(error, output) {
+			if (!error) {
+				fs.readJSON('./bower_components/' + library + '/bower.json', function(error, file) {
+					if (typeof file.main === 'object') {
+						//we've got options
+						res.send(file.main);
+					} else {
+						//the file we want is in file.main
+					}
+				});
+			}
+		});
+	} else {
+		res.status(404).send();
+	}
 });
 
 app.delete('/node/:id', function(req, res) {
