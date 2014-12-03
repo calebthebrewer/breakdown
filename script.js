@@ -150,12 +150,15 @@ angular
 					flush: flush
 				};
 
+			var _nodes = {};
+
 			function create(node) {
 				var d = $q.defer();
 
 				$http
 					.post('/node', node)
 					.success(function(node) {
+						_nodes[node.id] = node;
 						d.resolve(node);
 					}, function() {
 						d.reject();
@@ -167,6 +170,7 @@ angular
 			function save(id, node) {
 				var d = $q.defer();
 
+				_nodes[node.id] = node;
 				$http
 					.put('/node/' + id, node)
 					.success(function() {
@@ -181,14 +185,18 @@ angular
 			function get(id) {
 				var d = $q.defer();
 
-				$http
-					.get('/node/' + id)
-					.success(function(node) {
-						d.resolve(node);
-					})
-					.error(function() {
-						d.reject();
-					});
+				if (_nodes[id]) {
+					d.resolve(_nodes[id]);
+				} else {
+					$http
+						.get('/node/' + id)
+						.success(function(node) {
+							d.resolve(node);
+						})
+						.error(function() {
+							d.reject();
+						});
+				}
 
 				return d.promise;
 			}
@@ -211,6 +219,7 @@ angular
 			function remove(id) {
 				var d = $q.defer();
 
+				_nodes[id] = undefined;
 				$http
 					.delete('/node/' + id)
 					.success(function(node) {

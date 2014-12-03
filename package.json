@@ -11,6 +11,9 @@
   "dependencies": {
     "express": "^4.10.4",
     "lodash": "^2.4.1",
-    "q": "^1.1.2"
+    "q": "^1.1.2",
+    "body-parser": "^1.9.3",
+    "node-persist": "0.0.2",
+    "node-fs-extra": "^0.8.1"
   }
 }
