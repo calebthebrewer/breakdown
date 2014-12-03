@@ -1,6 +1,6 @@
 var q = require('q'),
 	_ = require('lodash'),
-	storage = require('node-fs-extra');
+	storage = require('node-persist');
 
 var _node = {
 	parent: 0,
@@ -17,10 +17,11 @@ module.exports = {
 };
 
 function create(node) {
-	var d = q.defer();
+	var d = q.defer(),
+		id = new Date().getTime();
 
-	_node.id = new Date().getTime();
-	node = _.default(node, _node);
+	node = _.defaults(node, _node);
+	node.id = id;
 	storage.setItem(id, node);
 	d.resolve(node);
 

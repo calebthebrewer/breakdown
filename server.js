@@ -28,15 +28,15 @@ app.get('/node/:id', function(req, res) {
 		.then(function(node) {
 			res.send(node);
 		}, function () {
-			res.status(404).send();
+			res.status(404).send(req.params.id);
 		});
 });
 
 app.post('/node', function(req, res) {
 	Nodes
 		.create(req.body)
-		.then(function(id) {
-			res.send(id);
+		.then(function(node) {
+			res.send(node);
 		}, function() {
 			res.status(500).send();
 		});
@@ -44,7 +44,7 @@ app.post('/node', function(req, res) {
 
 app.put('/node/:id', function(req, res) {
 	Nodes
-		.update(erq.params.id, req.body)
+		.update(req.params.id, req.body)
 		.then(function(node) {
 			res.send(node);
 		}, function() {

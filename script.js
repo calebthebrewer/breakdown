@@ -14,7 +14,7 @@ angular
 						children = angular.copy($node.children) || [];
 
 					//properties are inherited from parents prototype
-					if (!$node.properties && $node.parent) {
+					if ($node.parent !== undefined) {
 						Nodes
 							.get($node.parent)
 							.then(function(parent) {
@@ -84,15 +84,20 @@ angular
 
 					$scope.addChild = function () {
 						var child = {
-							id: ($node.id || 0) + '-' + $node.children.length,
 							label: 'Child ' + $node.children.length,
 							properties: $node.prototype,
 							parent: $node.id
 						};
 
-						children.push(child.id);
-						$node.children.push(child);
-						save();
+						Nodes
+							.create(child)
+							.then(function(node) {
+								children.push(node.id);
+								$node.children.push(node);
+								save();
+							}, function() {
+								//uh what?
+							});
 					};
 
 					$scope.remove = function () {
@@ -123,8 +128,8 @@ angular
 								.get(children[i])
 								.then(function(child) {
 									$node.children.push(child);
-								}, function() {
-									children.splice(i, 1);
+								}, function(id) {
+									children.splice(children.indexOf(id), 1);
 									save();
 								});
 						}
@@ -137,19 +142,33 @@ angular
 		'$http',
 		function ($q, $http) {
 			var Nodes = {
+					create: create,
 					save: save,
 					get: get,
 					plugin: plugin,
 					remove: remove,
 					flush: flush
-				},
-				prefix = 'node.';
+				};
+
+			function create(node) {
+				var d = $q.defer();
+
+				$http
+					.post('/node', node)
+					.success(function(node) {
+						d.resolve(node);
+					}, function() {
+						d.reject();
+					});
+
+				return d.promise;
+			}
 
 			function save(id, node) {
 				var d = $q.defer();
 
 				$http
-					.post('/node/' + id, node)
+					.put('/node/' + id, node)
 					.success(function() {
 						d.resolve();
 					}, function() {
@@ -221,14 +240,15 @@ angular
 		function ($scope, Nodes) {
 
 			Nodes
-				.get(0)
+				.get(1)
 				.then(function(node) {
 					$scope.node = node;
 				}, function(error) {
 					$scope.node = {
-						id: 0,
+						id: 1,
 						label: 'Bob',
-						children: []
+						children: [],
+						prototype: {}
 					};
 				});
 
