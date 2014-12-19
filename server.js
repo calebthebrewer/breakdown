@@ -52,6 +52,11 @@ app.put('/node/:id', function(req, res) {
 		});
 });
 
+app.post('/node/:id/dependency', function(req, res) {
+	//{library, version, source}
+	var dependency = req.body;
+});
+
 app.put('/node/:id/plugin/:library', function(req, res) {
 	var node = storage.getItem(req.params.id),
 		library = req.params.library;

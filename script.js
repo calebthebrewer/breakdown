@@ -127,6 +127,7 @@ angular
 							Nodes
 								.get(children[i])
 								.then(function(child) {
+									child.properties = $node.prototype;
 									$node.children.push(child);
 								}, function(id) {
 									children.splice(children.indexOf(id), 1);
